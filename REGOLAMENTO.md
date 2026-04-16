@@ -73,7 +73,7 @@ Ogni giocatore ha i seguenti limiti individuali:
 
 | Categoria | Limite Spazio |
 |-----------|---------------|
-| **Truppe** (troop + super troop) | 340 housing space |
+| **Truppe** (troop + super troop) | 360 housing space |
 | **Incantesimi** (spell) | 11 housing space |
 | **Macchine d'Assedio** (siege) | 3 housing space |
 | **Eroi** | Massimo **4 eroi** attivi |

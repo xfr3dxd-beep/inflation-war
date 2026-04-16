@@ -23,7 +23,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 // --- TYPES ---
 const HERO_LINK_IDS: Record<string, number> = { BK: 0, AQ: 1, GW: 2, RC: 4, MP: 6, DD: 7 };
-const LIMITS = { troop: 340, siege: 3, spell: 11 };
+const LIMITS = { troop: 360, siege: 3, spell: 11 };
 const CC_LIMITS = { troop: 55, spell: 4 };
 
 type ItemType = 'troop' | 'siege' | 'spell' | 'super_troop' | 'equipment' | 'pet';

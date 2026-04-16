@@ -26,7 +26,7 @@
 
 ## 🗡️ Truppe (Troop)
 
-Le truppe sono la base del vostro esercito. **Limite: 340 housing space** per giocatore.
+Le truppe sono la base del vostro esercito. **Limite: 360 housing space** per giocatore.
 
 ### Truppe a Prezzo Fisso
 Queste truppe costano sempre lo stesso, indipendentemente da quante ne compra il team.
@@ -77,7 +77,7 @@ Queste truppe diventano più costose ad ogni acquisto del team.
 
 ## 💎 Super Truppe (Super Troop)
 
-Le super truppe sono versioni potenziate. Seguono le stesse regole di spazio delle truppe normali (**340 housing space** condivisi).
+Le super truppe sono versioni potenziate. Seguono le stesse regole di spazio delle truppe normali (**360 housing space** condivisi).
 
 ### Super Truppe a Prezzo Fisso
 
