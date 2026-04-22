@@ -2562,35 +2562,35 @@ function AppContent() {
 )}
 {showEndMatchModal && (
     <div className="fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4 backdrop-blur-xl animate-fade-in" onClick={() => setShowEndMatchModal(false)}>
-        <div className="glass border border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden bg-[#0a101f] relative shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="glass border border-white/10 rounded-[2rem] w-full max-w-xl max-h-[85vh] overflow-y-auto custom-scrollbar bg-[#0a101f] relative shadow-2xl" onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="p-6 border-b border-white/10 bg-[#0a101f]/95 backdrop-blur-md">
-                <h3 className="text-3xl font-black text-center tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">
+            <div className="p-4 border-b border-white/10 bg-[#0a101f]/95 backdrop-blur-md sticky top-0 z-10">
+                <h3 className="text-2xl font-black text-center tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">
                     MATCH CONCLUSION
                 </h3>
-                <p className="text-center text-slate-400 text-[10px] font-bold tracking-[0.2em] uppercase mt-2">Enter Combat Reports</p>
+                <p className="text-center text-slate-400 text-[10px] font-bold tracking-[0.2em] uppercase mt-1">Enter Combat Reports</p>
             </div>
 
             {/* Body */}
-            <div className="p-6 md:p-8 space-y-8 relative">
+            <div className="p-4 md:p-6 space-y-5 relative">
                  <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-[100px] pointer-events-none"></div>
                  {lobbyTeams.map(team => (
-                     <div key={team.id} className="bg-black/40 rounded-2xl p-6 border border-white/5 space-y-4">
-                         <h4 className="font-black text-xl text-white tracking-widest uppercase">{team.name}</h4>
-                         <div className="grid grid-cols-2 gap-6">
+                     <div key={team.id} className="bg-black/40 rounded-xl p-4 border border-white/5 space-y-3">
+                         <h4 className="font-black text-base text-white tracking-widest uppercase">{team.name}</h4>
+                         <div className="grid grid-cols-2 gap-4">
                              <div>
-                                 <label className="block text-[10px] font-black text-yellow-500 tracking-[0.2em] uppercase mb-2 flex items-center gap-2"><Trophy size={12}/> Stars</label>
+                                 <label className="block text-[10px] font-black text-yellow-500 tracking-[0.2em] uppercase mb-1.5 flex items-center gap-2"><Trophy size={12}/> Stars</label>
                                  <input 
                                      type="number" 
                                      min="0"
                                      value={endMatchScores[team.id]?.stars || ''}
                                      onChange={e => setEndMatchScores(prev => ({ ...prev, [team.id]: { ...prev[team.id], stars: e.target.value } }))}
-                                     className="w-full bg-[#050b14] border border-white/10 focus:border-yellow-500/50 rounded-xl p-4 font-bold text-white outline-none transition-all shadow-inner text-center text-2xl"
+                                     className="w-full bg-[#050b14] border border-white/10 focus:border-yellow-500/50 rounded-lg p-3 font-bold text-white outline-none transition-all shadow-inner text-center text-xl"
                                      placeholder="0"
                                  />
                              </div>
                              <div>
-                                 <label className="block text-[10px] font-black text-blue-400 tracking-[0.2em] uppercase mb-2 flex items-center gap-2"><ArrowRight size={12}/> Destruction %</label>
+                                 <label className="block text-[10px] font-black text-blue-400 tracking-[0.2em] uppercase mb-1.5 flex items-center gap-2"><ArrowRight size={12}/> Destruction %</label>
                                  <input 
                                      type="number" 
                                      min="0"
@@ -2598,7 +2598,7 @@ function AppContent() {
                                      max="100"
                                      value={endMatchScores[team.id]?.percentage || ''}
                                      onChange={e => setEndMatchScores(prev => ({ ...prev, [team.id]: { ...prev[team.id], percentage: e.target.value } }))}
-                                     className="w-full bg-[#050b14] border border-white/10 focus:border-blue-500/50 rounded-xl p-4 font-bold text-white outline-none transition-all shadow-inner text-center text-2xl"
+                                     className="w-full bg-[#050b14] border border-white/10 focus:border-blue-500/50 rounded-lg p-3 font-bold text-white outline-none transition-all shadow-inner text-center text-xl"
                                      placeholder="0.0"
                                  />
                              </div>
@@ -2607,22 +2607,22 @@ function AppContent() {
                  ))}
                  
                  {foundLobby?.challonge_match_id && (
-                     <div className="bg-[#050b14]/80 p-5 rounded-2xl border border-red-500/30">
-                         <label className="block text-[10px] font-black text-red-500 mb-2 uppercase tracking-widest flex items-center gap-2"><Trophy size={12}/> Bracket Auto-Advance URL</label>
-                         <p className="text-[10px] text-slate-400 mb-3">This is an Official Match. Enter the Challonge Tournament ID to automatically report the winner.</p>
+                     <div className="bg-[#050b14]/80 p-4 rounded-xl border border-red-500/30">
+                         <label className="block text-[10px] font-black text-red-500 mb-1.5 uppercase tracking-widest flex items-center gap-2"><Trophy size={12}/> Bracket Auto-Advance URL</label>
+                         <p className="text-[10px] text-slate-400 mb-2">This is an Official Match. Enter the Challonge Tournament ID to automatically report the winner.</p>
                          <input 
                              type="text"
                              value={tournamentUrl}
                              onChange={e => setTournamentUrl(e.target.value)}
                              placeholder="e.g. cocelitetest1"
-                             className="w-full bg-black border border-white/5 focus:border-red-500/50 rounded-xl p-4 font-bold text-white outline-none transition-all shadow-inner"
+                             className="w-full bg-black border border-white/5 focus:border-red-500/50 rounded-lg p-3 font-bold text-white outline-none transition-all shadow-inner"
                          />
                      </div>
                  )}
                  
-                 <div className="flex gap-4 pt-4 border-t border-white/10">
-                     <button type="button" onClick={() => setShowEndMatchModal(false)} className="flex-1 py-4 px-6 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95">CANCEL</button>
-                     <button type="button" onClick={submitEndMatch} disabled={modLoading} className="flex-1 py-4 px-6 bg-green-600 hover:bg-green-500 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
+                 <div className="flex gap-3 pt-3 border-t border-white/10">
+                     <button type="button" onClick={() => setShowEndMatchModal(false)} className="flex-1 py-3 px-4 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95">CANCEL</button>
+                     <button type="button" onClick={submitEndMatch} disabled={modLoading} className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-[0_0_20px_rgba(34,197,94,0.4)] hover:shadow-[0_0_30px_rgba(34,197,94,0.6)] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2">
                          {modLoading ? 'PROCESSING...' : <><ChevronRight size={16}/> CONFIRM & SUBMIT</>}
                      </button>
                  </div>
