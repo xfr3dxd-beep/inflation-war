@@ -405,15 +405,38 @@ export const TournamentView: React.FC = () => {
                     )}
                 </div>
                 
-                <div className="w-full md:w-[130px] flex justify-end">
+                <div className="w-full md:w-auto flex flex-col items-center gap-2">
                     {/* Unified Moderator Control Panel Trigger */}
                     {profile?.role === 'moderator' && (
-                        <button 
-                            onClick={() => setShowModPanel(true)}
-                            className="flex items-center gap-2 bg-slate-800/40 border border-slate-500/50 hover:bg-slate-700/60 hover:border-slate-400 text-slate-200 px-4 py-2 rounded-xl font-bold uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(100,116,139,0.2)] transition-all hover:scale-105"
-                        >
-                            <Settings size={14} className="animate-spin-slow" /> MOD PANEL
-                        </button>
+                        <div className="flex gap-3">
+                            {tournament.status === 'upcoming' && (
+                                <button
+                                    onClick={async () => {
+                                        setIsProcessing(true);
+                                        try {
+                                            await toast.promise(
+                                                (async () => {
+                                                    await randomizeParticipants(tournament.challonge_url);
+                                                    setIsSeeded(true);
+                                                })(),
+                                                { loading: 'Randomizing...', success: 'Shuffled!', error: 'Failed' }
+                                            );
+                                        } catch { }
+                                        finally { setIsProcessing(false); }
+                                    }}
+                                    disabled={isProcessing}
+                                    className="flex items-center gap-2 bg-violet-900/40 border border-violet-500/50 hover:bg-violet-700/60 hover:border-violet-400 text-violet-200 px-4 py-2 rounded-xl font-bold uppercase tracking-widest text-xs shadow-lg transition-all hover:scale-105"
+                                >
+                                    <Shuffle size={14} /> SHUFFLE BRACKET
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => setShowModPanel(true)}
+                                className="flex items-center gap-2 bg-slate-800/40 border border-slate-500/50 hover:bg-slate-700/60 hover:border-slate-400 text-slate-200 px-4 py-2 rounded-xl font-bold uppercase tracking-widest text-xs shadow-[0_0_20px_rgba(100,116,139,0.2)] transition-all hover:scale-105"
+                            >
+                                <Settings size={14} className="animate-spin-slow" /> MOD PANEL
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
@@ -567,8 +590,8 @@ export const TournamentView: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {/* SEED PARTICIPANTS — only when upcoming and has group stages */}
-                                    {tournament.status === 'upcoming' && tournament.group_stages_enabled && (
+                                    {/* SEED / RANDOMIZE PARTICIPANTS — only when upcoming */}
+                                    {tournament.status === 'upcoming' && (
                                         <button
                                             onClick={async () => {
                                                 setIsProcessing(true);
@@ -578,7 +601,7 @@ export const TournamentView: React.FC = () => {
                                                             await randomizeParticipants(tournament.challonge_url);
                                                             setIsSeeded(true);
                                                         })(),
-                                                        { loading: 'Seeding participants...', success: 'Participants seeded into groups!', error: (err) => err.message || 'Failed to seed' }
+                                                        { loading: 'Randomizing participant seeding...', success: 'Participants shuffled and seeded!', error: (err) => err.message || 'Failed to seed' }
                                                     );
                                                 } catch { /* handled by toast */ }
                                                 finally { setIsProcessing(false); }
@@ -592,7 +615,7 @@ export const TournamentView: React.FC = () => {
                                         >
                                             <span className="flex items-center gap-3">
                                                 <Shuffle size={18} className={isSeeded ? 'text-emerald-500' : 'group-hover:scale-110 transition-transform text-violet-500'} />
-                                                {isSeeded ? '✓ PARTICIPANTS SEEDED' : 'SEED PARTICIPANTS'}
+                                                {isSeeded ? '✓ BRACKET SHUFFLED' : 'SHUFFLE & SEED BRACKET'}
                                             </span>
                                             {!isSeeded && <ChevronRight size={16} className="opacity-50" />}
                                         </button>
