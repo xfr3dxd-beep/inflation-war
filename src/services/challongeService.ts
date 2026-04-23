@@ -330,20 +330,55 @@ export const finalizeGroupStage = async (tournamentUrl: string) => {
 };
 
 export const randomizeParticipants = async (tournamentUrl: string) => {
-    // Note: We use the v1 API for randomize because v2.1 requires complex JSON:API payload
-    // and v1 is just a simple POST with no body needed.
-    const endpoint = `/v1/tournaments/${tournamentUrl}/participants/randomize.json`;
-    const { data: responseData, error } = await supabase.functions.invoke('challonge-proxy', {
-        body: { 
-            endpoint, 
-            method: 'POST' // v1 randomize is a POST
-        }
+    // Fetch all participants via v2.1
+    const endpoint = `/tournaments/${tournamentUrl}/participants`;
+    const { data, error } = await supabase.functions.invoke('challonge-proxy', {
+        body: { endpoint, method: 'GET' }
     });
 
     if (error) {
-        throw new Error(error.message || "Failed to randomize/seed participants on Challonge.");
+        throw new Error(error.message || "Failed to fetch participants for seeding.");
     }
-    return responseData;
+
+    const participants = data?.data || [];
+    if (participants.length === 0) {
+        throw new Error("No participants found to shuffle.");
+    }
+
+    // Fisher-Yates shuffle to generate random seed order
+    const seeds = participants.map((_: any, i: number) => i + 1);
+    for (let i = seeds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [seeds[i], seeds[j]] = [seeds[j], seeds[i]];
+    }
+
+    // Update each participant's seed via v2.1 PUT
+    const updatePromises = participants.map((p: any, idx: number) => {
+        const updateEndpoint = `/tournaments/${tournamentUrl}/participants/${p.id}`;
+        const payload = {
+            data: {
+                type: "Participant",
+                attributes: {
+                    seed: seeds[idx]
+                }
+            }
+        };
+        return supabase.functions.invoke('challonge-proxy', {
+            body: {
+                endpoint: updateEndpoint,
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            }
+        });
+    });
+
+    const results = await Promise.all(updatePromises);
+    const failed = results.filter(r => r.error);
+    if (failed.length > 0) {
+        throw new Error(`Failed to update ${failed.length} participant seed(s).`);
+    }
+
+    return results.map(r => r.data);
 };
 
 export const toggleGroupStage = async (
