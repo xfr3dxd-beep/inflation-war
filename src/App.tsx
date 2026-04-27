@@ -23,7 +23,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 // --- TYPES ---
 const HERO_LINK_IDS: Record<string, number> = { BK: 0, AQ: 1, GW: 2, RC: 4, MP: 6, DD: 7 };
-const LIMITS = { troop: 360, siege: 3, spell: 11 };
+const LIMITS = { troop: 352, siege: 3, spell: 11 };
 const CC_LIMITS = { troop: 55, spell: 4 };
 
 type ItemType = 'troop' | 'siege' | 'spell' | 'super_troop' | 'equipment' | 'pet';
@@ -343,8 +343,16 @@ function AppContent() {
 
   useEffect(() => {
      if (user) {
-         supabase.from('roster_members').select('roster_id').eq('user_id', user.id).single().then(({data}) => {
-             if (data) setUserRosterId(data.roster_id);
+         // Try roster_members first (covers both captain and active players)
+         supabase.from('roster_members').select('roster_id').eq('user_id', user.id).eq('role', 'player').limit(1).single().then(({data, error}) => {
+             if (data) {
+                 setUserRosterId(data.roster_id);
+             } else {
+                 // Fallback: check if user is a captain (rosters.captain_id)
+                 supabase.from('rosters').select('id').eq('captain_id', user.id).limit(1).single().then(({data: captainData}) => {
+                     if (captainData) setUserRosterId(captainData.id);
+                 });
+             }
          });
      }
   }, [user]);
@@ -459,15 +467,25 @@ function AppContent() {
   };
 
   useEffect(() => {
-    if ((location.pathname.startsWith('/stream/') || location.pathname.startsWith('/join/')) && lobbyCode && !foundLobby) {
-        const loadStreamData = async () => {
-            const { data: lobby } = await supabase.from('lobbies').select('*').eq('code', lobbyCode).single();
-            if (lobby) {
-                setFoundLobby(lobby);
-                fetchTeams(lobby.id);
-            }
-        };
-        loadStreamData();
+    const isJoinOrStream = location.pathname.startsWith('/stream/') || location.pathname.startsWith('/join/');
+    if (isJoinOrStream && lobbyCode) {
+        // If foundLobby is stale (different code), clear it so we reload
+        const isStale = foundLobby && foundLobby.code !== lobbyCode;
+        if (isStale) {
+            setFoundLobby(null);
+            setLobbyTeams([]);
+            return; // Will re-run with foundLobby = null
+        }
+        if (!foundLobby) {
+            const loadStreamData = async () => {
+                const { data: lobby } = await supabase.from('lobbies').select('*').eq('code', lobbyCode).single();
+                if (lobby) {
+                    setFoundLobby(lobby);
+                    fetchTeams(lobby.id);
+                }
+            };
+            loadStreamData();
+        }
     }
   }, [location.pathname, lobbyCode, foundLobby]);
 
@@ -1443,19 +1461,24 @@ function AppContent() {
                               </div>
                               
                               {(() => {
-                                  const isLocked = team.roster_id && team.roster_id !== userRosterId;
-                                  const isMyTeam = team.roster_id && team.roster_id === userRosterId;
                                   const isAlreadyInTeam = team.players?.some((p: any) => p.user_id === user?.id);
                                   const isFull = !isAlreadyInTeam && (team.players?.length >= 3);
+                                  // Only lock teams if userRosterId has been resolved (not null)
+                                  // When userRosterId is still loading (null) and team has a roster_id,
+                                  // don't prematurely lock — let join_lobby_secure handle authorization
+                                  const rosterResolved = userRosterId !== null || !team.roster_id;
+                                  const isLocked = rosterResolved && team.roster_id && team.roster_id !== userRosterId;
+                                  const isMyTeam = rosterResolved && team.roster_id && team.roster_id === userRosterId;
+                                  const isLoading = !rosterResolved && !!team.roster_id;
                                   
                                   return (
                                       <button 
                                         onClick={() => handleJoinTeam(team.name)} 
-                                        disabled={isFull || isLocked || deployLoading} 
-                                        className={`w-full py-5 rounded-xl font-black uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${isAlreadyInTeam ? 'bg-emerald-600 text-white hover:bg-emerald-500 hover:scale-[1.02] shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-emerald-400/50' : isFull ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-white/5' : isLocked ? 'bg-red-950/40 text-red-500/50 cursor-not-allowed border border-red-500/20 hover:border-red-500/50 hover:bg-red-900/30 text-red-400' : isMyTeam ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-[1.02] shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-white text-black hover:bg-blue-50 hover:scale-[1.02] hover:shadow-white/20'}`}
+                                        disabled={isFull || isLocked || isLoading || deployLoading} 
+                                        className={`w-full py-5 rounded-xl font-black uppercase tracking-widest transition-all duration-300 shadow-xl flex items-center justify-center gap-2 ${isAlreadyInTeam ? 'bg-emerald-600 text-white hover:bg-emerald-500 hover:scale-[1.02] shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-emerald-400/50' : isFull ? 'bg-slate-800 text-slate-600 cursor-not-allowed border border-white/5' : isLoading ? 'bg-slate-800/50 text-slate-400 cursor-wait border border-white/5' : isLocked ? 'bg-red-950/40 text-red-500/50 cursor-not-allowed border border-red-500/20 hover:border-red-500/50 hover:bg-red-900/30 text-red-400' : isMyTeam ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-[1.02] shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-white text-black hover:bg-blue-50 hover:scale-[1.02] hover:shadow-white/20'}`}
                                       >
-                                          {deployLoading ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : isAlreadyInTeam ? <Zap size={18} className="text-white"/> : isFull ? <Lock size={16}/> : isLocked ? <Lock size={16} className="text-red-500 mb-0.5"/> : <Zap size={18} className={isMyTeam ? 'text-white' : (idx===0?'text-blue-600':'text-purple-600')} />}
-                                          {deployLoading ? 'VERIFYING...' : isAlreadyInTeam ? 'REJOIN TEAM' : isFull ? 'UNIT FULL' : isLocked ? 'RESTRICTED' : isMyTeam ? 'JOIN YOUR TEAM' : 'INITIATE LINK'}
+                                          {deployLoading ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : isAlreadyInTeam ? <Zap size={18} className="text-white"/> : isFull ? <Lock size={16}/> : isLoading ? <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" /> : isLocked ? <Lock size={16} className="text-red-500 mb-0.5"/> : <Zap size={18} className={isMyTeam ? 'text-white' : (idx===0?'text-blue-600':'text-purple-600')} />}
+                                          {deployLoading ? 'VERIFYING...' : isAlreadyInTeam ? 'REJOIN TEAM' : isFull ? 'UNIT FULL' : isLoading ? 'VERIFYING ACCESS...' : isLocked ? 'RESTRICTED' : isMyTeam ? 'JOIN YOUR TEAM' : 'INITIATE LINK'}
                                       </button>
                                   );
                               })()}
