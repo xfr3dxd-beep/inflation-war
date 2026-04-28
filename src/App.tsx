@@ -104,6 +104,7 @@ const RAW_DATA = [
   { name: "Flame Flinger", dataId: 4000091, type: 'siege', weight: 1 },
   { name: "Battle Drill", dataId: 4000092, type: 'siege', weight: 1 },
   { name: "Troop Launcher", dataId: 4000135, type: 'siege', weight: 1 },
+  { name: "Sky wagon", dataId: 188, type: 'siege', weight: 1 },
   // Troops — Elixir barracks order
   { name: "Barbarian", dataId: 4000000, type: 'troop', weight: 1 },
   { name: "Archer", dataId: 4000001, type: 'troop', weight: 1 },
@@ -192,6 +193,7 @@ const getImageUrl = (name: string, type: string, hero?: string | null) => {
   if (name === "Stun Blast") return "/stun-blast.png";
   if (name === "Rocket Backpack") return "/rocket-backpack.png";
   if (name === "Greedy Raven") return "/greedy-raven.png";
+  if (name === "Sky wagon" || name === "Sky Wagon") return "/sky-wagon.png";
   const REPO_ROOT = "https://cdn.jsdelivr.net/gh/ClashKingInc/ClashKingAssets@main/assets/home-base";
   if (type === 'pet') return `${REPO_ROOT}/pet-pics/Icon_HV_Hero_Pets_${name.replace(/ /g, "_")}.png`;
   if (type === 'equipment' && hero) {
