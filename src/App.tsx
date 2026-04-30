@@ -276,7 +276,7 @@ function AppContent() {
   const [focusedPlayer, setFocusedPlayer] = useState<any>(null);
   const [petModalItem, setPetModalItem] = useState<Item | null>(null);
 
-  const [userRosterId, setUserRosterId] = useState<string | null>(null);
+  const [userRosterIds, setUserRosterIds] = useState<string[]>([]);
   const [rosterLoaded, setRosterLoaded] = useState(false);
 
   const [showOverseerModal, setShowOverseerModal] = useState(false);
@@ -346,7 +346,7 @@ function AppContent() {
 
   useEffect(() => {
      if (!user) {
-         setUserRosterId(null);
+         setUserRosterIds([]);
          setRosterLoaded(true); // No user = resolution complete (no roster)
          return;
      }
@@ -356,40 +356,34 @@ function AppContent() {
 
      const resolveRoster = async () => {
          try {
-             // Try roster_members first (covers both captain and active players)
-             const { data: memberData } = await supabase
+             const ids = new Set<string>();
+
+             // Fetch ALL roster memberships (player role)
+             const { data: memberRows } = await supabase
                  .from('roster_members')
                  .select('roster_id')
                  .eq('user_id', user.id)
-                 .eq('role', 'player')
-                 .limit(1)
-                 .maybeSingle();
+                 .eq('role', 'player');
 
              if (cancelled) return;
+             if (memberRows) memberRows.forEach(r => ids.add(r.roster_id));
 
-             if (memberData) {
-                 setUserRosterId(memberData.roster_id);
-                 setRosterLoaded(true);
-                 return;
-             }
-
-             // Fallback: check if user is a captain (rosters.captain_id)
-             const { data: captainData } = await supabase
+             // Fetch ALL captain rosters
+             const { data: captainRows } = await supabase
                  .from('rosters')
                  .select('id')
-                 .eq('captain_id', user.id)
-                 .limit(1)
-                 .maybeSingle();
+                 .eq('captain_id', user.id);
 
              if (cancelled) return;
+             if (captainRows) captainRows.forEach(r => ids.add(r.id));
 
-             setUserRosterId(captainData?.id ?? null);
+             setUserRosterIds(Array.from(ids));
              setRosterLoaded(true);
          } catch (err) {
              // Network error / timeout — still mark as loaded to prevent stuck UI
              console.warn('[RosterResolve] Error resolving roster, defaulting:', err);
              if (!cancelled) {
-                 setUserRosterId(null);
+                 setUserRosterIds([]);
                  setRosterLoaded(true);
              }
          }
@@ -1508,8 +1502,8 @@ function AppContent() {
                                   // Use explicit rosterLoaded flag to know when resolution is complete.
                                   // rosterResolved = true when: roster resolution is done OR team has no roster binding
                                   const rosterResolved = rosterLoaded || !team.roster_id;
-                                  const isLocked = rosterResolved && team.roster_id && team.roster_id !== userRosterId;
-                                  const isMyTeam = rosterResolved && team.roster_id && team.roster_id === userRosterId;
+                                  const isLocked = rosterResolved && team.roster_id && !userRosterIds.includes(team.roster_id);
+                                  const isMyTeam = rosterResolved && team.roster_id && userRosterIds.includes(team.roster_id);
                                   const isLoading = !rosterResolved && !!team.roster_id;
                                   
                                   return (
