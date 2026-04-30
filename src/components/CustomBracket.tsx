@@ -38,7 +38,8 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
                     .from('rosters')
                     .select('id')
                     .eq('captain_id', user.id)
-                    .single();
+                    .limit(1)
+                    .maybeSingle();
                 
                 if (!captainError && captainData?.id) {
                     setUserChallongeId(captainData.id);
@@ -48,7 +49,8 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
                         .from('roster_members')
                         .select('roster_id')
                         .eq('user_id', user.id)
-                        .single();
+                        .limit(1)
+                        .maybeSingle();
                         
                     if (!memberError && memberData?.roster_id) {
                         setUserChallongeId(memberData.roster_id);
