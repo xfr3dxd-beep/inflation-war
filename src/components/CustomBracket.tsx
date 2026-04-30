@@ -34,27 +34,31 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
     useEffect(() => {
         const fetchUserRosterIds = async () => {
             if (user?.id) {
-                // Fetch ALL rosters where user is captain (handles multi-roster captains)
+                const ids = new Set<string>();
+
+                // Fetch ALL rosters where user is captain
                 const { data: captainRosters } = await supabase
                     .from('rosters')
                     .select('id')
                     .eq('captain_id', user.id);
-                
+
                 if (captainRosters && captainRosters.length > 0) {
-                    setUserRosterIds(captainRosters.map(r => r.id));
+                    captainRosters.forEach(r => ids.add(r.id));
                     setIsCaptain(true);
-                } else {
-                    // Fallback: check all roster memberships
-                    const { data: memberData } = await supabase
-                        .from('roster_members')
-                        .select('roster_id')
-                        .eq('user_id', user.id);
-                        
-                    if (memberData && memberData.length > 0) {
-                        setUserRosterIds(memberData.map(m => m.roster_id));
-                        setIsCaptain(false);
-                    }
                 }
+
+                // ALSO fetch all roster memberships (active players only)
+                const { data: memberData } = await supabase
+                    .from('roster_members')
+                    .select('roster_id')
+                    .eq('user_id', user.id)
+                    .eq('role', 'player');
+                    
+                if (memberData && memberData.length > 0) {
+                    memberData.forEach(m => ids.add(m.roster_id));
+                }
+
+                setUserRosterIds(Array.from(ids));
             }
         };
         fetchUserRosterIds();
