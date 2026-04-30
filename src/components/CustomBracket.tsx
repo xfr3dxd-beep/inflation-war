@@ -20,7 +20,7 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
     const [participants, setParticipants] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [userChallongeId, setUserChallongeId] = useState<string | null>(null);
+    const [userRosterIds, setUserRosterIds] = useState<string[]>([]);
     const [isCaptain, setIsCaptain] = useState<boolean>(false);
     const [activeMatches, setActiveMatches] = useState<Record<string, string>>({});
     const [tournamentType, setTournamentType] = useState<string>('single elimination');
@@ -32,34 +32,32 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
     const [nameMap, setNameMap] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        const fetchUserChallongeId = async () => {
+        const fetchUserRosterIds = async () => {
             if (user?.id) {
-                const { data: captainData, error: captainError } = await supabase
+                // Fetch ALL rosters where user is captain (handles multi-roster captains)
+                const { data: captainRosters } = await supabase
                     .from('rosters')
                     .select('id')
-                    .eq('captain_id', user.id)
-                    .limit(1)
-                    .maybeSingle();
+                    .eq('captain_id', user.id);
                 
-                if (!captainError && captainData?.id) {
-                    setUserChallongeId(captainData.id);
+                if (captainRosters && captainRosters.length > 0) {
+                    setUserRosterIds(captainRosters.map(r => r.id));
                     setIsCaptain(true);
                 } else {
-                    const { data: memberData, error: memberError } = await supabase
+                    // Fallback: check all roster memberships
+                    const { data: memberData } = await supabase
                         .from('roster_members')
                         .select('roster_id')
-                        .eq('user_id', user.id)
-                        .limit(1)
-                        .maybeSingle();
+                        .eq('user_id', user.id);
                         
-                    if (!memberError && memberData?.roster_id) {
-                        setUserChallongeId(memberData.roster_id);
+                    if (memberData && memberData.length > 0) {
+                        setUserRosterIds(memberData.map(m => m.roster_id));
                         setIsCaptain(false);
                     }
                 }
             }
         };
-        fetchUserChallongeId();
+        fetchUserRosterIds();
     }, [user]);
 
     useEffect(() => {
@@ -264,11 +262,11 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
             const bottomRosterId = rosterMap[p2Id];
             if (!topRosterId || !bottomRosterId) continue;
 
-            const isPlayerInMatch = userChallongeId && (topRosterId === userChallongeId || bottomRosterId === userChallongeId);
+            const isPlayerInMatch = userRosterIds.length > 0 && (userRosterIds.includes(topRosterId) || userRosterIds.includes(bottomRosterId));
             if (!isPlayerInMatch || !isCaptain) continue;
 
             // Only allow if this team hasn't been assigned a creatable match yet
-            const myRoster = topRosterId === userChallongeId ? topRosterId : bottomRosterId;
+            const myRoster = userRosterIds.includes(topRosterId) ? topRosterId : bottomRosterId;
             if (teamFirstMatch.has(myRoster)) continue;
 
             teamFirstMatch.add(myRoster);
@@ -281,7 +279,7 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
     const renderMatchCard = (match: any, canCreateLobby: boolean = false) => {
         const topRosterId = rosterMap[match.participants[0]?.id];
         const bottomRosterId = rosterMap[match.participants[1]?.id];
-        const isPlayerInMatch = Boolean(userChallongeId && (topRosterId === userChallongeId || bottomRosterId === userChallongeId));
+        const isPlayerInMatch = Boolean(userRosterIds.length > 0 && (userRosterIds.includes(topRosterId!) || userRosterIds.includes(bottomRosterId!)));
         const liveLobbyCode = activeMatches[match.id];
         const isComplete = match.state === 'complete';
 
@@ -651,7 +649,7 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
                                     {stats.map((team, index) => {
                                         const rosterId = rosterMap[team.id];
                                         const displayName = nameMap[team.id] || team.name || `Team ${team.id}`;
-                                        const isMyTeam = userChallongeId && String(userChallongeId) === String(rosterId);
+                                        const isMyTeam = userRosterIds.some(id => String(id) === String(rosterId));
                                         
                                         return (
                                             <tr key={team.id} className={`border-b border-white/5 transition-colors ${
@@ -762,7 +760,7 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
             const hasLobby = !!activeMatches[m.id];
             const topRosterId = rosterMap[m.participants[0]?.id];
             const bottomRosterId = rosterMap[m.participants[1]?.id];
-            const isPlayerInMatch = Boolean(userChallongeId && (topRosterId === userChallongeId || bottomRosterId === userChallongeId));
+            const isPlayerInMatch = Boolean(userRosterIds.length > 0 && (userRosterIds.includes(topRosterId!) || userRosterIds.includes(bottomRosterId!)));
             // Show if: it's the creatable match, has a live lobby, or player is in an open match
             return creatableIds.has(String(m.id)) || hasLobby || (isOpen && isPlayerInMatch && m.participants[0]?.id && m.participants[1]?.id);
         });
