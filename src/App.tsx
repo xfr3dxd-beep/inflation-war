@@ -248,7 +248,7 @@ const NumberTicker = ({ value, duration = 500 }: { value: number, duration?: num
 // --- HELPER COMPONENT ---
 function LobbyCodeSync({ setLobbyCode }: { setLobbyCode: (c: string) => void }) {
   const { code } = useParams();
-  useEffect(() => { if (code) setLobbyCode(code); }, [code, setLobbyCode]);
+  useEffect(() => { if (code) setLobbyCode(code.toUpperCase()); }, [code, setLobbyCode]);
   return null;
 }
 
@@ -277,6 +277,7 @@ function AppContent() {
   const [petModalItem, setPetModalItem] = useState<Item | null>(null);
 
   const [userRosterId, setUserRosterId] = useState<string | null>(null);
+  const [rosterLoaded, setRosterLoaded] = useState(false);
 
   const [showOverseerModal, setShowOverseerModal] = useState(false);
   const [matchType, setMatchType] = useState<'custom' | 'official'>('custom');
@@ -344,20 +345,59 @@ function AppContent() {
   }, [loading]);
 
   useEffect(() => {
-     if (user) {
-         // Try roster_members first (covers both captain and active players)
-         supabase.from('roster_members').select('roster_id').eq('user_id', user.id).eq('role', 'player').limit(1).single().then(({data, error}) => {
-             if (data) {
-                 setUserRosterId(data.roster_id);
-             } else {
-                 // Fallback: check if user is a captain (rosters.captain_id)
-                 supabase.from('rosters').select('id').eq('captain_id', user.id).limit(1).single().then(({data: captainData}) => {
-                     if (captainData) setUserRosterId(captainData.id);
-                 });
-             }
-         });
+     if (!user) {
+         setUserRosterId(null);
+         setRosterLoaded(true); // No user = resolution complete (no roster)
+         return;
      }
-  }, [user]);
+
+     let cancelled = false;
+     setRosterLoaded(false);
+
+     const resolveRoster = async () => {
+         try {
+             // Try roster_members first (covers both captain and active players)
+             const { data: memberData } = await supabase
+                 .from('roster_members')
+                 .select('roster_id')
+                 .eq('user_id', user.id)
+                 .eq('role', 'player')
+                 .limit(1)
+                 .maybeSingle();
+
+             if (cancelled) return;
+
+             if (memberData) {
+                 setUserRosterId(memberData.roster_id);
+                 setRosterLoaded(true);
+                 return;
+             }
+
+             // Fallback: check if user is a captain (rosters.captain_id)
+             const { data: captainData } = await supabase
+                 .from('rosters')
+                 .select('id')
+                 .eq('captain_id', user.id)
+                 .limit(1)
+                 .maybeSingle();
+
+             if (cancelled) return;
+
+             setUserRosterId(captainData?.id ?? null);
+             setRosterLoaded(true);
+         } catch (err) {
+             // Network error / timeout — still mark as loaded to prevent stuck UI
+             console.warn('[RosterResolve] Error resolving roster, defaulting:', err);
+             if (!cancelled) {
+                 setUserRosterId(null);
+                 setRosterLoaded(true);
+             }
+         }
+     };
+
+     resolveRoster();
+     return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Handle Automated Bracket Auto-Fetch
   useEffect(() => {
@@ -472,7 +512,7 @@ function AppContent() {
     const isJoinOrStream = location.pathname.startsWith('/stream/') || location.pathname.startsWith('/join/');
     if (isJoinOrStream && lobbyCode) {
         // If foundLobby is stale (different code), clear it so we reload
-        const isStale = foundLobby && foundLobby.code !== lobbyCode;
+        const isStale = foundLobby && foundLobby.code?.toUpperCase() !== lobbyCode?.toUpperCase();
         if (isStale) {
             setFoundLobby(null);
             setLobbyTeams([]);
@@ -480,7 +520,7 @@ function AppContent() {
         }
         if (!foundLobby) {
             const loadStreamData = async () => {
-                const { data: lobby } = await supabase.from('lobbies').select('*').eq('code', lobbyCode).single();
+                const { data: lobby } = await supabase.from('lobbies').select('*').ilike('code', lobbyCode).single();
                 if (lobby) {
                     setFoundLobby(lobby);
                     fetchTeams(lobby.id);
@@ -1465,10 +1505,9 @@ function AppContent() {
                               {(() => {
                                   const isAlreadyInTeam = team.players?.some((p: any) => p.user_id === user?.id);
                                   const isFull = !isAlreadyInTeam && (team.players?.length >= 3);
-                                  // Only lock teams if userRosterId has been resolved (not null)
-                                  // When userRosterId is still loading (null) and team has a roster_id,
-                                  // don't prematurely lock — let join_lobby_secure handle authorization
-                                  const rosterResolved = userRosterId !== null || !team.roster_id;
+                                  // Use explicit rosterLoaded flag to know when resolution is complete.
+                                  // rosterResolved = true when: roster resolution is done OR team has no roster binding
+                                  const rosterResolved = rosterLoaded || !team.roster_id;
                                   const isLocked = rosterResolved && team.roster_id && team.roster_id !== userRosterId;
                                   const isMyTeam = rosterResolved && team.roster_id && team.roster_id === userRosterId;
                                   const isLoading = !rosterResolved && !!team.roster_id;

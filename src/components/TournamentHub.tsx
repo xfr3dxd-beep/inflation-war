@@ -46,7 +46,7 @@ export const TournamentHub: React.FC = () => {
                 const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
                 setProfile(data);
                 
-                const { data: rosterData } = await supabase.from('rosters').select('*').eq('captain_id', user.id).single();
+                const { data: rosterData } = await supabase.from('rosters').select('*').eq('captain_id', user.id).limit(1).maybeSingle();
                 if (rosterData) {
                     setCaptainRoster(rosterData);
                     const { data: regs } = await supabase
