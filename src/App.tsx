@@ -1698,12 +1698,12 @@ function AppContent() {
                   <div className="hidden md:block w-px h-8 bg-white/10"></div>
                   
                   <a 
-                      href="https://t.me/CoCEliteNetwork" 
+                      href="https://discord.gg/jFgFVPAJ8M" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40"
+                      className="flex items-center gap-2 bg-[#5865F2] hover:bg-[#4752C4] text-white px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[#5865F2]/20 hover:shadow-[#5865F2]/40"
                   >
-                      VISIT CHANNEL <ExternalLink size={12} />
+                      VISIT DISCORD <ExternalLink size={12} />
                   </a>
               </div>
               
