@@ -95,6 +95,7 @@ const RAW_DATA = [
   { name: "Flame Breath", dataId: 57, type: 'equipment', hero: 'DD', weight: 0 },
   { name: "Stun Blast", dataId: 56, type: 'equipment', hero: 'DD', weight: 0 },
   { name: "Rocket Backpack", dataId: 53, type: 'equipment', hero: 'DD', weight: 0 },
+  { name: "Electro Fangs", dataId: 59, type: 'equipment', hero: 'DD', weight: 0 },
   // Sieges
   { name: "Wall Wrecker", dataId: 4000051, type: 'siege', weight: 1 },
   { name: "Battle Blimp", dataId: 4000052, type: 'siege', weight: 1 },
@@ -192,6 +193,7 @@ const getImageUrl = (name: string, type: string, hero?: string | null) => {
   if (name === "Flame Breath") return "/flame-breath.png";
   if (name === "Stun Blast") return "/stun-blast.png";
   if (name === "Rocket Backpack") return "/rocket-backpack.png";
+  if (name === "Electro Fangs") return "/Electro Fangs.png";
   if (name === "Greedy Raven") return "/greedy-raven.png";
   if (name === "Sky wagon" || name === "Sky Wagon") return "/sky-wagon.png";
   const REPO_ROOT = "https://cdn.jsdelivr.net/gh/ClashKingInc/ClashKingAssets@main/assets/home-base";
