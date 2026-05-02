@@ -377,8 +377,10 @@ function AppContent() {
              if (cancelled) return;
              if (captainRows) captainRows.forEach(r => ids.add(r.id));
 
-             setUserRosterIds(Array.from(ids));
-             setRosterLoaded(true);
+              const resolved = Array.from(ids);
+              console.log('[RosterResolve] Resolved userRosterIds:', resolved, 'for user:', user.id);
+              setUserRosterIds(resolved);
+              setRosterLoaded(true);
          } catch (err) {
              // Network error / timeout — still mark as loaded to prevent stuck UI
              console.warn('[RosterResolve] Error resolving roster, defaulting:', err);
@@ -1505,6 +1507,7 @@ function AppContent() {
                                   const isLocked = rosterResolved && team.roster_id && !userRosterIds.includes(team.roster_id);
                                   const isMyTeam = rosterResolved && team.roster_id && userRosterIds.includes(team.roster_id);
                                   const isLoading = !rosterResolved && !!team.roster_id;
+                                  console.log(`[LobbyJoin] Team "${team.name}" | roster_id=${team.roster_id} | rosterLoaded=${rosterLoaded} | rosterResolved=${rosterResolved} | userRosterIds=[${userRosterIds}] | isMyTeam=${isMyTeam} | isLocked=${isLocked} | isLoading=${isLoading}`);
                                   
                                   return (
                                       <button 
