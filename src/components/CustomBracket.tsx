@@ -34,35 +34,30 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
     useEffect(() => {
         const fetchUserRosterIds = async () => {
             if (user?.id) {
-                const ids = new Set<string>();
-
-                // Fetch ALL rosters where user is captain
+                // Check if user is captain of any roster (for CREATE LOBBY button)
                 const { data: captainRosters } = await supabase
                     .from('rosters')
                     .select('id')
                     .eq('captain_id', user.id);
 
                 if (captainRosters && captainRosters.length > 0) {
-                    captainRosters.forEach(r => ids.add(r.id));
                     setIsCaptain(true);
                 }
 
-                // ALSO fetch all roster memberships (active players only)
+                // userRosterIds = ONLY rosters where user is an active player (role='player')
+                // Captain privilege is for creating lobbies only, not joining them.
                 const { data: memberData } = await supabase
                     .from('roster_members')
                     .select('roster_id')
                     .eq('user_id', user.id)
                     .eq('role', 'player');
                     
-                if (memberData && memberData.length > 0) {
-                    memberData.forEach(m => ids.add(m.roster_id));
-                }
-
-                setUserRosterIds(Array.from(ids));
+                const playerIds = memberData ? memberData.map(m => m.roster_id) : [];
+                setUserRosterIds(playerIds);
             }
         };
         fetchUserRosterIds();
-    }, [user]);
+    }, [user?.id]);
 
     useEffect(() => {
         const fetchActiveMatches = async () => {

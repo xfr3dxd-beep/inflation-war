@@ -355,30 +355,20 @@ function AppContent() {
      setRosterLoaded(false);
 
      const resolveRoster = async () => {
-         try {
-             const ids = new Set<string>();
+          try {
+              // Only fetch rosters where user is an ACTIVE PLAYER (role='player').
+              // Captain privilege is for creating lobbies only, not joining them.
+              const { data: memberRows } = await supabase
+                  .from('roster_members')
+                  .select('roster_id')
+                  .eq('user_id', user.id)
+                  .eq('role', 'player');
 
-             // Fetch ALL roster memberships (player role)
-             const { data: memberRows } = await supabase
-                 .from('roster_members')
-                 .select('roster_id')
-                 .eq('user_id', user.id)
-                 .eq('role', 'player');
+              if (cancelled) return;
+              const ids = memberRows ? memberRows.map(r => r.roster_id) : [];
 
-             if (cancelled) return;
-             if (memberRows) memberRows.forEach(r => ids.add(r.roster_id));
-
-             // Fetch ALL captain rosters
-             const { data: captainRows } = await supabase
-                 .from('rosters')
-                 .select('id')
-                 .eq('captain_id', user.id);
-
-             if (cancelled) return;
-             if (captainRows) captainRows.forEach(r => ids.add(r.id));
-
-              setUserRosterIds(Array.from(ids));
-              setRosterLoaded(true);
+               setUserRosterIds(ids);
+               setRosterLoaded(true);
          } catch (err) {
              // Network error / timeout — still mark as loaded to prevent stuck UI
              console.warn('[RosterResolve] Error resolving roster, defaulting:', err);
