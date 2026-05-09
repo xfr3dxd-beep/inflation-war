@@ -21,6 +21,7 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userRosterIds, setUserRosterIds] = useState<string[]>([]);
+    const [captainRosterIds, setCaptainRosterIds] = useState<string[]>([]);
     const [isCaptain, setIsCaptain] = useState<boolean>(false);
     const [activeMatches, setActiveMatches] = useState<Record<string, string>>({});
     const [tournamentType, setTournamentType] = useState<string>('single elimination');
@@ -42,10 +43,11 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
 
                 if (captainRosters && captainRosters.length > 0) {
                     setIsCaptain(true);
+                    setCaptainRosterIds(captainRosters.map(r => r.id));
                 }
 
                 // userRosterIds = ONLY rosters where user is an active player (role='player')
-                // Captain privilege is for creating lobbies only, not joining them.
+                // This is used for JOIN LOBBY visibility.
                 const { data: memberData } = await supabase
                     .from('roster_members')
                     .select('roster_id')
@@ -261,11 +263,16 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
             const bottomRosterId = rosterMap[p2Id];
             if (!topRosterId || !bottomRosterId) continue;
 
-            const isPlayerInMatch = userRosterIds.length > 0 && (userRosterIds.includes(topRosterId) || userRosterIds.includes(bottomRosterId));
-            if (!isPlayerInMatch || !isCaptain) continue;
+            // Captain can CREATE lobbies for their team's matches.
+            // We check captainRosterIds (rosters where user is captain)
+            // OR userRosterIds (rosters where user is an active player).
+            // The captain_id on the roster determines creation privilege.
+            const allMyRosterIds = [...new Set([...captainRosterIds, ...userRosterIds])];
+            const isInMatch = allMyRosterIds.length > 0 && (allMyRosterIds.includes(topRosterId) || allMyRosterIds.includes(bottomRosterId));
+            if (!isInMatch || !isCaptain) continue;
 
             // Only allow if this team hasn't been assigned a creatable match yet
-            const myRoster = userRosterIds.includes(topRosterId) ? topRosterId : bottomRosterId;
+            const myRoster = allMyRosterIds.includes(topRosterId) ? topRosterId : bottomRosterId;
             if (teamFirstMatch.has(myRoster)) continue;
 
             teamFirstMatch.add(myRoster);
@@ -278,7 +285,9 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
     const renderMatchCard = (match: any, canCreateLobby: boolean = false) => {
         const topRosterId = rosterMap[match.participants[0]?.id];
         const bottomRosterId = rosterMap[match.participants[1]?.id];
-        const isPlayerInMatch = Boolean(userRosterIds.length > 0 && (userRosterIds.includes(topRosterId!) || userRosterIds.includes(bottomRosterId!)));
+        // For JOIN LOBBY visibility: check both active player rosters AND captain rosters
+        const allMyRosterIds = [...new Set([...captainRosterIds, ...userRosterIds])];
+        const isPlayerInMatch = Boolean(allMyRosterIds.length > 0 && (allMyRosterIds.includes(topRosterId!) || allMyRosterIds.includes(bottomRosterId!)));
         const liveLobbyCode = activeMatches[match.id];
         const isComplete = match.state === 'complete';
 
@@ -759,7 +768,8 @@ export const CustomBracket: React.FC<CustomBracketProps> = ({ tournamentUrl, isM
             const hasLobby = !!activeMatches[m.id];
             const topRosterId = rosterMap[m.participants[0]?.id];
             const bottomRosterId = rosterMap[m.participants[1]?.id];
-            const isPlayerInMatch = Boolean(userRosterIds.length > 0 && (userRosterIds.includes(topRosterId!) || userRosterIds.includes(bottomRosterId!)));
+            const allMyIds = [...new Set([...captainRosterIds, ...userRosterIds])];
+            const isPlayerInMatch = Boolean(allMyIds.length > 0 && (allMyIds.includes(topRosterId!) || allMyIds.includes(bottomRosterId!)));
             // Show if: it's the creatable match, has a live lobby, or player is in an open match
             return creatableIds.has(String(m.id)) || hasLobby || (isOpen && isPlayerInMatch && m.participants[0]?.id && m.participants[1]?.id);
         });

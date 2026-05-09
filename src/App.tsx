@@ -1491,9 +1491,11 @@ function AppContent() {
                               {(() => {
                                   const isAlreadyInTeam = team.players?.some((p: any) => p.user_id === user?.id);
                                   const isFull = !isAlreadyInTeam && (team.players?.length >= 3);
-                                  // Use explicit rosterLoaded flag to know when resolution is complete.
+                                   // Use explicit rosterLoaded flag to know when resolution is complete.
                                   // rosterResolved = true when: roster resolution is done OR team has no roster binding
                                   const rosterResolved = rosterLoaded || !team.roster_id;
+                                  // STRICT: Only active players (role='player') on the roster can join.
+                                  // No moderator bypass — moderator must also be an active player to join.
                                   const isLocked = rosterResolved && team.roster_id && !userRosterIds.includes(team.roster_id);
                                   const isMyTeam = rosterResolved && team.roster_id && userRosterIds.includes(team.roster_id);
                                   const isLoading = !rosterResolved && !!team.roster_id;
