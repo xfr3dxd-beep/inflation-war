@@ -360,17 +360,23 @@ function AppContent() {
           try {
               // Only fetch rosters where user is an ACTIVE PLAYER (role='player').
               // Captain privilege is for creating lobbies only, not joining them.
-              const { data: memberRows } = await supabase
+              console.log('[RosterResolve] Querying roster_members for user:', user.id);
+              const { data: memberRows, error: rosterErr } = await supabase
                   .from('roster_members')
                   .select('roster_id')
                   .eq('user_id', user.id)
                   .eq('role', 'player');
 
+              if (rosterErr) {
+                  console.error('[RosterResolve] Supabase error:', rosterErr);
+              }
+
               if (cancelled) return;
               const ids = memberRows ? memberRows.map(r => r.roster_id) : [];
+              console.log('[RosterResolve] Found active rosters:', ids, 'from rows:', memberRows);
 
-               setUserRosterIds(ids);
-               setRosterLoaded(true);
+              setUserRosterIds(ids);
+              setRosterLoaded(true);
          } catch (err) {
              // Network error / timeout — still mark as loaded to prevent stuck UI
              console.warn('[RosterResolve] Error resolving roster, defaulting:', err);
@@ -1499,7 +1505,7 @@ function AppContent() {
                                   const isLocked = rosterResolved && team.roster_id && !userRosterIds.includes(team.roster_id);
                                   const isMyTeam = rosterResolved && team.roster_id && userRosterIds.includes(team.roster_id);
                                   const isLoading = !rosterResolved && !!team.roster_id;
-
+                                  console.log('[JoinPage] Team:', team.name, 'roster_id:', team.roster_id, 'userRosterIds:', userRosterIds, 'rosterLoaded:', rosterLoaded, '→ isLocked:', isLocked, 'isMyTeam:', isMyTeam);
                                   
                                   return (
                                       <button 
