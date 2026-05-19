@@ -481,7 +481,7 @@ function AppContent() {
   };
 
   const fetchTeams = async (lId: string) => {
-    const { data: teams } = await supabase.from('teams').select('*, players(id, name, army_link, is_locked, user_id, purchases(item_id, equipped_hero, is_cc))').eq('lobby_id', lId).order('created_at', { ascending: true });
+    const { data: teams } = await supabase.from('teams').select('*, players(id, name, army_link, is_locked, user_id, purchases(item_id, equipped_hero, is_cc, price_paid))').eq('lobby_id', lId).order('created_at', { ascending: true });
     if (teams) setLobbyTeams(teams);
   };
 
@@ -1887,6 +1887,11 @@ function AppContent() {
                                         <div className="flex items-center gap-3">
                                             <div className="font-black text-3xl tracking-tight text-slate-200 group-hover/card:text-blue-400 transition-colors drop-shadow-md">{p.name}</div>
                                             {p.is_locked && <div className="px-2 py-1 bg-red-500/20 border border-red-500/50 rounded text-[9px] font-black text-red-400 uppercase tracking-widest flex items-center gap-1"><Lock size={10}/></div>}
+                                            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
+                                                <Coins size={12} className="text-yellow-500/70"/>
+                                                <span className="text-yellow-400 font-mono font-black text-sm tracking-tight">{(p.purchases || []).reduce((sum: number, pur: any) => sum + (pur.price_paid || 0), 0)}g</span>
+                                                <span className="text-yellow-500/40 text-[8px] font-bold uppercase tracking-widest">spent</span>
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {p.army_link && (
