@@ -14,7 +14,7 @@ const TournamentHub = lazy(() => import('./components/TournamentHub').then(m => 
 const TournamentView = lazy(() => import('./components/TournamentView').then(m => ({ default: m.TournamentView })));
 const TeamArmyPanel = lazy(() => import('./components/TeamArmyPanel').then(m => ({ default: m.TeamArmyPanel })));
 
-import { Shield, Sword, Coins, ExternalLink, Hammer, Crown, Minus, Check, Users, RefreshCw, Trash2, Trophy, ArrowRightLeft, LogOut, Gavel, MonitorPlay, ClipboardCheck, AlertTriangle, Loader2, Edit2, Save, X, Tv, PawPrint, Castle, Terminal, Wifi, Lock, Zap, Skull, Hexagon, Crosshair, Settings, ArrowRight, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Shield, Sword, Swords, Coins, ExternalLink, Hammer, Crown, Minus, Check, Users, RefreshCw, Trash2, Trophy, ArrowRightLeft, LogOut, Gavel, MonitorPlay, ClipboardCheck, AlertTriangle, Loader2, Edit2, Save, X, Tv, PawPrint, Castle, Terminal, Wifi, Lock, Zap, Skull, Hexagon, Crosshair, Settings, ArrowRight, ChevronRight, ArrowLeft } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { confirmToast } from './utils/confirmToast';
 import { isSafeUrl } from './lib/sanitize';
@@ -1891,6 +1891,11 @@ function AppContent() {
                                                 <Coins size={12} className="text-yellow-500/70"/>
                                                 <span className="text-yellow-400 font-mono font-black text-sm tracking-tight">{(p.purchases || []).reduce((sum: number, pur: any) => sum + (pur.price_paid || 0), 0)}g</span>
                                                 <span className="text-yellow-500/40 text-[8px] font-bold uppercase tracking-widest">spent</span>
+                                            </div>
+                                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-1.5 flex items-center gap-1.5 shadow-sm">
+                                                <Swords size={12} className="text-blue-500/70"/>
+                                                <span className="text-blue-400 font-mono font-black text-sm tracking-tight">{(p.purchases || []).reduce((sum: number, pur: any) => { if (pur.is_cc) return sum; const item = dbItems.find((x: any) => x.id === pur.item_id); return sum + ((item && (item.type === 'troop' || item.type === 'super_troop')) ? item.housing_space : 0); }, 0)}/352</span>
+                                                <span className="text-blue-500/40 text-[8px] font-bold uppercase tracking-widest">troops</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
